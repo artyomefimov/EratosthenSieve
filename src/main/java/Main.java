@@ -1,6 +1,28 @@
+import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
+import creator.ActorCreator;
+import creator.ActorCreator.SetGeneratorMessage;
+import generator.Generator;
+import generator.Generator.GenerateNextNumberMessage;
+
 public class Main {
+
   public static void main(String[] args) {
-    int a = 11;
-    System.out.println(a * 2 + 1);
+    ActorSystem system = ActorSystem.create("eratosthen_sieve");
+    try {
+      ActorRef actorCreator = system.actorOf(ActorCreator.props(system, 25));
+      ActorRef generator = system.actorOf(Generator.props(actorCreator));
+
+      actorCreator.tell(new SetGeneratorMessage(generator), ActorRef.noSender());
+
+      generator.tell(new GenerateNextNumberMessage(), ActorRef.noSender());
+
+      System.out.println(">>> Press ENTER to exit <<<");
+      System.in.read();
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      system.terminate();
+    }
   }
 }
