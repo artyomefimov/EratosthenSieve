@@ -11,8 +11,8 @@ public class Main {
     ActorSystem system = ActorSystem.create("eratosthen_sieve");
     try {
 
-      int maxActors = 25;
-      int messagesInChain = 10;
+      int maxActors = 250;
+      int messagesInChain = 20;
 
       ActorRef actorCreator = system.actorOf(ActorCreator.props(system, maxActors));
       ActorRef generator = system.actorOf(Generator.props(actorCreator, messagesInChain));

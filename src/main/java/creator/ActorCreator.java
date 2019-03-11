@@ -10,9 +10,10 @@ import akka.event.LoggingAdapter;
 import java.util.ArrayList;
 import java.util.List;
 import sieveelement.SieveElement;
-import sieveelement.SieveElement.GeneratedMaxActorsMessage;
+import abstractsieve.AbstractSieveElement.GeneratedMaxActorsMessage;
 
 public class ActorCreator extends AbstractActor {
+
   private ActorSystem actorSystem;
   private ActorRef generator;
   private LoggingAdapter log;
@@ -24,7 +25,7 @@ public class ActorCreator extends AbstractActor {
     return Props.create(ActorCreator.class, () -> new ActorCreator(actorSystem, maxActors));
   }
 
-  public ActorCreator (ActorSystem actorSystem, int maxActors) {
+  public ActorCreator(ActorSystem actorSystem, int maxActors) {
     this.actorSystem = actorSystem;
     log = Logging.getLogger(getContext().getSystem(), this);
     generatedActors = 0;
@@ -33,6 +34,7 @@ public class ActorCreator extends AbstractActor {
   }
 
   public static class SetGeneratorMessage {
+
     private ActorRef generator;
 
     public SetGeneratorMessage(ActorRef generator) {
@@ -41,6 +43,7 @@ public class ActorCreator extends AbstractActor {
   }
 
   public static class CreateNewActorMessage {
+
     private int numberForNewActor;
 
     public CreateNewActorMessage(int numberForNewActor) {
@@ -48,22 +51,20 @@ public class ActorCreator extends AbstractActor {
     }
   }
 
-  public static class EndGenerationMessage {
-  }
-
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(EndGenerationMessage.class, endGeneration ->
-            log.info("Creator has created " + generatedActors + " actors")
-        )
         .match(CreateNewActorMessage.class, createNewActor -> {
           if (generatedActors < maxActors) {
-            String newActorName = "HandlerOfNumber" + createNewActor.numberForNewActor;
-            generatedActorsNames.add(newActorName);
+            String newActorName = generateNewSieveElementName(createNewActor);
+
             ActorRef newSieveElement = actorSystem
-                .actorOf(SieveElement.props(getSelf(), createNewActor.numberForNewActor, generator), newActorName);
-            log.info("created actor: " + newActorName);
+                .actorOf(SieveElement.props(getSelf(),
+                    createNewActor.numberForNewActor,
+                    generator),
+                    newActorName);
+
+            log.info("Created sieve element: " + newActorName);
 
             generatedActors++;
 
@@ -71,13 +72,22 @@ public class ActorCreator extends AbstractActor {
                 new GetNewActorMessage(newSieveElement),
                 ActorRef.noSender());
           } else {
-            log.info("Work has finished. Creator has created all possible actors: " + maxActors + ". Actors names: " + generatedActorsNames);
-            getSender().tell(new GeneratedMaxActorsMessage(), ActorRef.noSender());
+            log.info("Work has finished. Creator has created all possible actors: " + maxActors
+                + ". Actors names: " + generatedActorsNames);
+
+            generator.tell(new GeneratedMaxActorsMessage(), ActorRef.noSender());
           }
         })
         .match(SetGeneratorMessage.class, setGeneratorMessage ->
-          this.generator = setGeneratorMessage.generator
+            generator = setGeneratorMessage.generator
         )
         .build();
+  }
+
+  private String generateNewSieveElementName(CreateNewActorMessage message) {
+    String newActorName = "HandlerOfNumber" + message.numberForNewActor;
+    generatedActorsNames.add(newActorName);
+
+    return newActorName;
   }
 }
