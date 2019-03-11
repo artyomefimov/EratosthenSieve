@@ -58,7 +58,7 @@ public class ActorCreator extends AbstractActor {
             log.info("Creator has created " + generatedActors + " actors")
         )
         .match(CreateNewActorMessage.class, createNewActor -> {
-          if (generatedActors <= maxActors) {
+          if (generatedActors < maxActors) {
             String newActorName = "HandlerOfNumber" + createNewActor.numberForNewActor;
             generatedActorsNames.add(newActorName);
             ActorRef newSieveElement = actorSystem

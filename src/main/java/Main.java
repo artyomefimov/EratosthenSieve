@@ -12,7 +12,7 @@ public class Main {
     try {
 
       int maxActors = 25;
-      int messagesInChain = 1;
+      int messagesInChain = 10;
 
       ActorRef actorCreator = system.actorOf(ActorCreator.props(system, maxActors));
       ActorRef generator = system.actorOf(Generator.props(actorCreator, messagesInChain));

@@ -45,11 +45,6 @@ public class Generator extends AbstractSieveElement {
                 .tell(new HandleNextNumberMessage(currentNumber), getSelf());
           }
         })
-        .match(Terminated.class, terminated -> {
-          if (terminated.actor() == actorCreator) {
-            log.info("creator terminated");
-          }
-        })
         .match(GetNewActorMessage.class, newActorMessage -> {
           nextSieveElement = newActorMessage.getNextActor();
                 for (int i = 0; i < messagesInChain; i++)
