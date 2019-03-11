@@ -10,8 +10,12 @@ public class Main {
   public static void main(String[] args) {
     ActorSystem system = ActorSystem.create("eratosthen_sieve");
     try {
-      ActorRef actorCreator = system.actorOf(ActorCreator.props(system, 25));
-      ActorRef generator = system.actorOf(Generator.props(actorCreator));
+
+      int maxActors = 25;
+      int messagesInChain = 1;
+
+      ActorRef actorCreator = system.actorOf(ActorCreator.props(system, maxActors));
+      ActorRef generator = system.actorOf(Generator.props(actorCreator, messagesInChain));
 
       actorCreator.tell(new SetGeneratorMessage(generator), ActorRef.noSender());
 

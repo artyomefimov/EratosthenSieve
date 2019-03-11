@@ -55,8 +55,14 @@ public class SieveElement extends AbstractSieveElement {
           }
         })
         .match(GetNewActorMessage.class, newActorMessage -> {
-          nextSieveElement = newActorMessage.getNextActor();
-          nextSieveElement.tell(receivedMessage, ActorRef.noSender());
+          if (nextSieveElement == null)
+          {
+            nextSieveElement = newActorMessage.getNextActor();
+            log.info("next sieve element is: " + nextSieveElement.toString());
+            nextSieveElement.tell(receivedMessage, ActorRef.noSender());
+          } else {
+            nextSieveElement.tell(newActorMessage, ActorRef.noSender());
+          }
         })
         .match(GeneratedMaxActorsMessage.class, generatedMaxActorsMessage -> {
           log.info("Generation is ending. Last actor has number: " + currentNumber);

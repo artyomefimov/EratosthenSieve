@@ -9,16 +9,18 @@ import creator.ActorCreator.CreateNewActorMessage;
 import sieveelement.SieveElement.HandleNextNumberMessage;
 
 public class Generator extends AbstractSieveElement {
+    private int messagesInChain;
 
-  public static Props props(ActorRef actorCreator) {
-    return Props.create(Generator.class, () -> new Generator(actorCreator));
+  public static Props props(ActorRef actorCreator, int messagesInChain) {
+    return Props.create(Generator.class, () -> new Generator(actorCreator, messagesInChain));
   }
 
-  public Generator(ActorRef actorCreator) {
+  public Generator(ActorRef actorCreator, int messagesInChain) {
     this.actorCreator = actorCreator;
     currentNumber = 0;
     log = Logging.getLogger(getContext().getSystem(), this);
     this.getContext().watch(actorCreator);
+    this.messagesInChain = messagesInChain;
   }
 
   private int getNextNumber() {
@@ -50,8 +52,12 @@ public class Generator extends AbstractSieveElement {
         })
         .match(GetNewActorMessage.class, newActorMessage -> {
           nextSieveElement = newActorMessage.getNextActor();
-          nextSieveElement
-              .tell(new HandleNextNumberMessage(currentNumber), getSelf());
+                for (int i = 0; i < messagesInChain; i++)
+                {
+                    currentNumber = getNextNumber();
+                    nextSieveElement
+                            .tell(new HandleNextNumberMessage(currentNumber), getSelf());
+                }
         })
         .build();
   }
