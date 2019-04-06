@@ -9,18 +9,15 @@ import sieveelement.SieveElement.HandleNextNumberMessage;
 
 public class Generator extends AbstractSieveElement {
 
-  private int messagesInChain;
-
-  public static Props props(ActorRef actorCreator, int messagesInChain) {
-    return Props.create(Generator.class, () -> new Generator(actorCreator, messagesInChain));
+  public static Props props(ActorRef actorCreator) {
+    return Props.create(Generator.class, () -> new Generator(actorCreator));
   }
 
-  public Generator(ActorRef actorCreator, int messagesInChain) {
+  public Generator(ActorRef actorCreator) {
     this.actorCreator = actorCreator;
     currentNumber = 0;
     log = Logging.getLogger(getContext().getSystem(), this);
     this.getContext().watch(actorCreator);
-    this.messagesInChain = messagesInChain;
   }
 
   private int getNextNumber() {
@@ -34,40 +31,38 @@ public class Generator extends AbstractSieveElement {
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(GenerateNextNumberMessage.class, generateNextNumber -> generateNumberAndSendToChain())
-        .match(GetNewActorMessage.class, this::generateMessagesBulkAndSendToChain)
+        .match(GenerateNextNumberMessage.class,
+            generateNextNumber -> generateNumberAndSendToChain())
+        .match(GetNewActorMessage.class, this::getActorAndStartGeneration)
         .match(GeneratedMaxActorsMessage.class, this::sendFinishMessageToChain)
         .build();
   }
-  
+
   private void generateNumberAndSendToChain() {
     generateNextNumber();
-    
+
     if (nextSieveElement != null) {
       sendNumberToFirstInChain();
     } else {
       requestFirstElementInChain();
     }
   }
-  
+
   private void requestFirstElementInChain() {
     actorCreator
         .tell(new CreateNewActorMessage(currentNumber), getSelf());
   }
-  
-  private void generateMessagesBulkAndSendToChain(GetNewActorMessage message) {
-    nextSieveElement = message.getNextActor();
 
-    for (int i = 0; i < messagesInChain; i++) {
-      generateNextNumber();
-      sendNumberToFirstInChain();
-    }
+  private void getActorAndStartGeneration(GetNewActorMessage message) {
+    nextSieveElement = message.getNextActor();
+    generateNumberAndSendToChain();
   }
 
   private void sendFinishMessageToChain(GeneratedMaxActorsMessage message) {
     log.info("Generation is ending. Last actor has number: " + currentNumber);
 
     nextSieveElement.tell(message, ActorRef.noSender());
+    getContext().stop(getSelf());
   }
 
   private void generateNextNumber() {

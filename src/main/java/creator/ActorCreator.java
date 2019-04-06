@@ -1,5 +1,6 @@
 package creator;
 
+import abstractsieve.AbstractSieveElement.GeneratedMaxActorsMessage;
 import abstractsieve.AbstractSieveElement.GetNewActorMessage;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
@@ -10,7 +11,6 @@ import akka.event.LoggingAdapter;
 import java.util.ArrayList;
 import java.util.List;
 import sieveelement.SieveElement;
-import abstractsieve.AbstractSieveElement.GeneratedMaxActorsMessage;
 
 public class ActorCreator extends AbstractActor {
 
@@ -20,6 +20,7 @@ public class ActorCreator extends AbstractActor {
   private int generatedActors;
   private int maxActors;
   private List<String> generatedActorsNames;
+  private long time = -1;
 
   public static Props props(ActorSystem actorSystem, int maxActors) {
     return Props.create(ActorCreator.class, () -> new ActorCreator(actorSystem, maxActors));
@@ -55,6 +56,10 @@ public class ActorCreator extends AbstractActor {
   public Receive createReceive() {
     return receiveBuilder()
         .match(CreateNewActorMessage.class, createNewActor -> {
+          if (time == -1) {
+            time = System.currentTimeMillis();
+            log.info("time set");
+          }
           if (generatedActors < maxActors) {
             String newActorName = generateNewSieveElementName(createNewActor);
 
@@ -73,7 +78,8 @@ public class ActorCreator extends AbstractActor {
                 ActorRef.noSender());
           } else {
             log.info("Work has finished. Creator has created all possible actors: " + maxActors
-                + ". Actors names: " + generatedActorsNames);
+                + ". Actors names: " + generatedActorsNames +
+                "\ncalculation time: " + (System.currentTimeMillis() - time) + " ms");
 
             generator.tell(new GeneratedMaxActorsMessage(), ActorRef.noSender());
           }

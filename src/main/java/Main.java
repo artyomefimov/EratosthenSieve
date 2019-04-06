@@ -11,11 +11,10 @@ public class Main {
     ActorSystem system = ActorSystem.create("eratosthen_sieve");
     try {
 
-      int maxActors = 250;
-      int messagesInChain = 20;
+      int maxActors = 120;
 
       ActorRef actorCreator = system.actorOf(ActorCreator.props(system, maxActors));
-      ActorRef generator = system.actorOf(Generator.props(actorCreator, messagesInChain));
+      ActorRef generator = system.actorOf(Generator.props(actorCreator));
 
       actorCreator.tell(new SetGeneratorMessage(generator), ActorRef.noSender());
 
