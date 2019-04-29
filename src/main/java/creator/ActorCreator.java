@@ -56,32 +56,14 @@ public class ActorCreator extends AbstractActor {
   public Receive createReceive() {
     return receiveBuilder()
         .match(CreateNewActorMessage.class, createNewActor -> {
-          if (time == -1) {
-            time = System.currentTimeMillis();
-            log.info("time set");
-          }
+          setTimeIfNeeded();
+
           if (generatedActors < maxActors) {
-            String newActorName = generateNewSieveElementName(createNewActor);
+            ActorRef newSieveElement = createNewSieveElement(createNewActor);
 
-            ActorRef newSieveElement = actorSystem
-                .actorOf(SieveElement.props(getSelf(),
-                    createNewActor.numberForNewActor,
-                    generator),
-                    newActorName);
-
-            log.info("Created sieve element: " + newActorName);
-
-            generatedActors++;
-
-            getSender().tell(
-                new GetNewActorMessage(newSieveElement),
-                ActorRef.noSender());
+            sendNewSieveElementToRequester(newSieveElement);
           } else {
-            log.info("Work has finished. Creator has created all possible actors: " + maxActors
-                + ". Actors names: " + generatedActorsNames +
-                "\ncalculation time: " + (System.currentTimeMillis() - time) + " ms");
-
-            generator.tell(new GeneratedMaxActorsMessage(), ActorRef.noSender());
+            finishWork();
           }
         })
         .match(SetGeneratorMessage.class, setGeneratorMessage ->
@@ -90,10 +72,47 @@ public class ActorCreator extends AbstractActor {
         .build();
   }
 
+  private void setTimeIfNeeded() {
+    if (time == -1) {
+      time = System.currentTimeMillis();
+      log.info("time set");
+    }
+  }
+
+  private ActorRef createNewSieveElement(CreateNewActorMessage message) {
+    String newActorName = generateNewSieveElementName(message);
+
+    ActorRef newSieveElement = actorSystem
+            .actorOf(SieveElement.props(getSelf(),
+                    message.numberForNewActor,
+                    generator),
+                    newActorName);
+
+    log.info("Created sieve element: " + newActorName);
+
+    generatedActors++;
+
+    return newSieveElement;
+  }
+
   private String generateNewSieveElementName(CreateNewActorMessage message) {
     String newActorName = "HandlerOfNumber" + message.numberForNewActor;
     generatedActorsNames.add(newActorName);
 
     return newActorName;
+  }
+
+  private void sendNewSieveElementToRequester(ActorRef newSieveElement) {
+    getSender().tell(
+            new GetNewActorMessage(newSieveElement),
+            ActorRef.noSender());
+  }
+
+  private void finishWork() {
+    log.info("Work has finished. Creator has created all possible actors: " + maxActors
+            + ". Actors names: " + generatedActorsNames +
+            "\ncalculation time: " + (System.currentTimeMillis() - time) + " ms");
+
+    generator.tell(new GeneratedMaxActorsMessage(), ActorRef.noSender());
   }
 }

@@ -55,7 +55,7 @@ public class Generator extends AbstractSieveElement {
 
   private void getActorAndStartGeneration(GetNewActorMessage message) {
     nextSieveElement = message.getNextActor();
-    generateNumberAndSendToChain();
+    sendNumberToFirstInChain();
   }
 
   private void sendFinishMessageToChain(GeneratedMaxActorsMessage message) {
